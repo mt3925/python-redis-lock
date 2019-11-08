@@ -30,6 +30,7 @@ UNLOCK_SCRIPT = b"""
     else
         redis.call("del", KEYS[2])
         redis.call("lpush", KEYS[2], 1)
+        redis.call('expire', KEYS[2], 1)
         redis.call("del", KEYS[1])
         return 0
     end
@@ -52,6 +53,7 @@ EXTEND_SCRIPT_HASH = sha1(EXTEND_SCRIPT).hexdigest()
 RESET_SCRIPT = b"""
     redis.call('del', KEYS[2])
     redis.call('lpush', KEYS[2], 1)
+    redis.call('expire', KEYS[2], 1)
     return redis.call('del', KEYS[1])
 """
 
@@ -64,6 +66,7 @@ RESET_ALL_SCRIPT = b"""
         signal = 'lock-signal:' .. string.sub(lock, 6)
         redis.call('del', signal)
         redis.call('lpush', signal, 1)
+        redis.call('expire', signal, 1)
         redis.call('del', lock)
     end
     return #locks
@@ -364,8 +367,6 @@ class Lock(object):
             raise NotAcquired("Lock %s is not acquired or it already expired." % self._name)
         elif error:
             raise RuntimeError("Unsupported error code %s from EXTEND script." % error)
-        else:
-            self._delete_signal()
 
     def _delete_signal(self):
         self._client.delete(self._signal)

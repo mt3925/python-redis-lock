@@ -459,11 +459,12 @@ def test_auto_renewal(conn):
     assert lock._lock_renewal_thread is None
 
 
-def test_signal_cleanup_on_release(conn):
-    """After releasing a lock, the signal key should not remain."""
+def test_signal_expiration(conn):
+    """Signal keys expire within one seconds after releasing the lock."""
     lock = Lock(conn, 'foo')
     lock.acquire()
     lock.release()
+    time.sleep(1)
     assert conn.llen('lock-signal:foo') == 0
     assert conn.exists('lock-signal:foo') == 0
 
